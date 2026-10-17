@@ -1,0 +1,173 @@
+import java.util.Scanner;
+
+public class FactorizacionLUPasoAPaso {
+
+    // Clase para manejar fracciones exactas (simplificadas)
+    static class Fraccion {
+        long num;
+        long den;
+
+        public Fraccion(long num, long den) {
+            if (den == 0) {
+                throw new ArithmeticException("Denominador cero");
+            }
+            if (den < 0) {
+                num = -num;
+                den = -den;
+            }
+            long mcd = mcd(Math.abs(num), den);
+            this.num = num / mcd;
+            this.den = den / mcd;
+        }
+
+        public static long mcd(long a, long b) {
+            while (b != 0) {
+                long temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        public Fraccion sumar(Fraccion o) {
+            return new Fraccion(this.num * o.den + o.num * this.den, this.den * o.den);
+        }
+
+        public Fraccion restar(Fraccion o) {
+            return new Fraccion(this.num * o.den - o.num * this.den, this.den * o.den);
+        }
+
+        public Fraccion multiplicar(Fraccion o) {
+            return new Fraccion(this.num * o.num, this.den * o.den);
+        }
+
+        public Fraccion dividir(Fraccion o) {
+            return new Fraccion(this.num * o.den, this.den * o.num);
+        }
+
+        @Override
+        public String toString() {
+            if (den == 1) {
+                return String.valueOf(num);
+            }
+            return num + "/" + den;
+        }
+    }
+
+    static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println("==========================================");
+        System.out.println("   FACTORIZACIÓN LU - PASO A PASO Y FRACCIONES");
+        System.out.println("==========================================");
+        System.out.println("Ingrese los datos de la matriz original A (3x3).");
+        System.out.println("Puede ingresar enteros o fracciones (ej: 5/3, -1/2)");
+        System.out.println("==========================================");
+
+        int n = 3;
+        Fraccion[][] A = new Fraccion[n][n];
+
+        // Ingreso de la matriz A
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                System.out.print("A[" + (i + 1) + "][" + (j + 1) + "]: ");
+                A[i][j] = leerFraccion();
+            }
+        }
+
+        // ==========================================
+        // 1. MOSTRAR LA MATRIZ ORIGINAL
+        // ==========================================
+        System.out.println("\n==========================================");
+        System.out.println("          1. MATRIZ ORIGINAL (A)");
+        System.out.println("==========================================");
+        imprimirMatrizFracciones(A);
+
+        Fraccion[][] L = new Fraccion[n][n];
+        Fraccion[][] U = new Fraccion[n][n];
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                L[i][j] = new Fraccion(0, 1);
+                U[i][j] = new Fraccion(0, 1);
+            }
+            L[i][i] = new Fraccion(1, 1); // Diagonal principal de L en 1
+        }
+
+        // ==========================================
+        // 2. APARTADO DE RESOLUCIÓN PASO A PASO
+        // ==========================================
+        System.out.println("\n==========================================");
+        System.out.println("        2. RESOLUCIÓN PASO A PASO");
+        System.out.println("==========================================");
+
+        for (int i = 0; i < n; i++) {
+            // Calcular elementos de la Matriz U
+            for (int k = i; k < n; k++) {
+                Fraccion suma = new Fraccion(0, 1);
+                for (int j = 0; j < i; j++) {
+                    suma = suma.sumar(L[i][j].multiplicar(U[j][k]));
+                }
+                U[i][k] = A[i][k].restar(suma);
+                System.out.println("-> Calculando U[" + (i + 1) + "][" + (k + 1) + "] = " + U[i][k]);
+            }
+
+            // Calcular elementos de la Matriz L
+            for (int k = i + 1; k < n; k++) {
+                Fraccion suma = new Fraccion(0, 1);
+                for (int j = 0; j < i; j++) {
+                    suma = suma.sumar(L[k][j].multiplicar(U[j][i]));
+                }
+                if (U[i][i].num == 0) {
+                    System.out.println("\nError: Pivote en cero.");
+                    return;
+                }
+                L[k][i] = (A[k][i].restar(suma)).dividir(U[i][i]);
+                System.out.println("-> Calculando L[" + (k + 1) + "][" + (i + 1) + "] = " + L[k][i]);
+            }
+        }
+
+        // ==========================================
+        // 3. MOSTRAR RESULTADOS FINALES (MATRICES L y U)
+        // ==========================================
+        System.out.println("\n==========================================");
+        System.out.println("          3. MATRICES FINALES");
+        System.out.println("==========================================");
+        
+        System.out.println("\nMATRIZ L (Inferior):");
+        imprimirMatrizFracciones(L);
+
+        System.out.println("\nMATRIZ U (Superior):");
+        imprimirMatrizFracciones(U);
+    }
+
+    public static Fraccion leerFraccion() {
+        while (true) {
+            String entrada = scanner.nextLine().trim();
+            try {
+                if (entrada.contains("/")) {
+                    String[] partes = entrada.split("/");
+                    if (partes.length == 2) {
+                        long num = Long.parseLong(partes[0].trim());
+                        long den = Long.parseLong(partes[1].trim());
+                        return new Fraccion(num, den);
+                    }
+                } else {
+                    long num = Long.parseLong(entrada);
+                    return new Fraccion(num, 1);
+                }
+            } catch (Exception e) {}
+            System.out.print("Entrada inválida. Ingrese número o fracción (ej: 5/3): ");
+        }
+    }
+
+    public static void imprimirMatrizFracciones(Fraccion[][] matriz) {
+        for (int i = 0; i < matriz.length; i++) {
+            System.out.print("[ ");
+            for (int j = 0; j < matriz[0].length; j++) {
+                System.out.printf("%10s ", matriz[i][j].toString());
+            }
+            System.out.println(" ]");
+        }
+    }
+}
